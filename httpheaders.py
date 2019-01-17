@@ -4,7 +4,7 @@ from collections import OrderedDict
 from flask import Flask, request
 from werkzeug.datastructures import Headers
 
-from settings import HTTP_HEADERS_FILENAME
+from settings import HTTP_HEADERS_FILENAME, REMOVE_HEADERS
 
 app = Flask(__name__)
 
@@ -39,8 +39,9 @@ def get_request():
     # copy of headers
     headers = Headers(request.headers)
     # remove cookie
-    if headers.has_key("Cookie"):
-        headers.pop("Cookie")
+    for h in REMOVE_HEADERS:
+        if headers.has_key(h):
+            headers.pop(h)
     json_headers = json.dumps(OrderedDict(headers))
     # read file
     with open(HTTP_HEADERS_FILENAME, "r") as f:
