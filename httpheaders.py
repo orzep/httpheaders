@@ -22,13 +22,14 @@ def httpheaders():
     else:
         with open(HTTP_HEADERS_FILENAME, "r") as f:
             data = f.readlines()
+        # remove last colon
         data[-1]=data[-1][:-2]
         return render_template("headers.html", headers=data)
 
 def get_request():
     # copy of headers
     headers = Headers(request.headers)
-    # remove cookie
+    # remove unwanted extra headers
     for h in REMOVE_HEADERS:
         if headers.has_key(h):
             headers.pop(h)
@@ -59,6 +60,15 @@ def ipaddr():
     get_request()
     return request.remote_addr
 
+@app.route('/ua')
+def ua():
+    get_request()
+    headers = request.headers
+    if "User-Agent" in headers:    
+        return headers["User-Agent"]
+    else:
+        return ""
+
 @app.route('/uagents')
 def uagents():
     with open(HTTP_HEADERS_FILENAME, "r") as f:
@@ -77,7 +87,10 @@ def uagents():
     else:
         return render_template("uagents.html", uagents=uagents)
 
-
+@app.route('/help')
+def helpinfo():
+    get_request()
+    return render_template("help.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
