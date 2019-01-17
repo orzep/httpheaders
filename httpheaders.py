@@ -1,7 +1,7 @@
 import json
 from collections import OrderedDict
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 from werkzeug.datastructures import Headers
 
 from settings import HTTP_HEADERS_FILENAME, REMOVE_HEADERS
@@ -9,33 +9,21 @@ from settings import HTTP_HEADERS_FILENAME, REMOVE_HEADERS
 app = Flask(__name__)
 
 
+def dedup(data):
+    return list(OrderedDict.fromkeys(data))
+
 @app.route('/hh')
 def httpheaders():
     get_request()
-    with open(HTTP_HEADERS_FILENAME, "r") as f:
-        data = f.read()
-        
-    return "[" + data[:-2] + "]"
-
-
-@app.route('/hhp')
-def httpheaders_pretty():
-    get_request()
-    with open(HTTP_HEADERS_FILENAME, "r") as f:
-        data = f.readlines()
-        resp = """<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf8">
-<title>HTTP Headers</title>
-</head> <body>
-[<BR>
-"""
-    for d in data:
-        resp += d + "<BR>"
-    resp = resp[:-6] + resp[-5:] + "]<br></body>\n</html>"
-    return resp
-
+    if request.args.get("pretty") is None:
+        with open(HTTP_HEADERS_FILENAME, "r") as f:
+            data = f.read()       
+        return "[" + data[:-2] + "]"
+    else:
+        with open(HTTP_HEADERS_FILENAME, "r") as f:
+            data = f.readlines()
+        data[-1]=data[-1][:-2]
+        return render_template("headers.html", headers=data)
 
 def get_request():
     # copy of headers
@@ -51,7 +39,7 @@ def get_request():
     # append new headers
     headers_data.append(json_headers + ",\n")
     # deduplicate
-    headers_data_to_write = list(OrderedDict.fromkeys(headers_data))
+    headers_data_to_write = dedup(headers_data)
     
     # write output data
     with open(HTTP_HEADERS_FILENAME, "w") as f:
@@ -70,6 +58,25 @@ def index(path):
 def ipaddr():
     get_request()
     return request.remote_addr
+
+@app.route('/uagents')
+def uagents():
+    with open(HTTP_HEADERS_FILENAME, "r") as f:
+        headers_data = f.read()
+    # remove colon
+    headers_data = headers_data[:-2]
+    uagents = list()
+    json_headers = json.loads("[" + headers_data + "]")
+    for h in json_headers:
+        if "User-Agent" in h:
+            uagents.append(h["User-Agent"])
+    uagents = dedup(uagents)
+    arg = request.args.get("pretty")
+    if arg is None:
+        return json.dumps(uagents)
+    else:
+        return render_template("uagents.html", uagents=uagents)
+
 
 
 if __name__ == '__main__':
