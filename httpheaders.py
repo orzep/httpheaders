@@ -1,4 +1,5 @@
 import json
+import os.path
 from collections import OrderedDict
 
 from flask import Flask, request, render_template
@@ -34,6 +35,11 @@ def get_request():
         if headers.has_key(h):
             headers.pop(h)
     json_headers = json.dumps(OrderedDict(headers))
+    # create file if not exists
+    if not os.path.isfile(HTTP_HEADERS_FILENAME):
+        with open(HTTP_HEADERS_FILENAME, "w+"):
+            pass
+
     # read file
     with open(HTTP_HEADERS_FILENAME, "r") as f:
         headers_data = f.readlines()
@@ -75,6 +81,7 @@ def ua():
 
 @app.route('/uagents')
 def uagents():
+    get_request()
     with open(HTTP_HEADERS_FILENAME, "r") as f:
         headers_data = f.read()
     # remove colon
