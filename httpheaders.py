@@ -58,7 +58,11 @@ def index(path):
 @app.route('/ip')
 def ipaddr():
     get_request()
-    return request.remote_addr
+    if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
+        return request.environ['REMOTE_ADDR']
+    else:
+        return request.environ['HTTP_X_FORWARDED_FOR'] # if behind a proxy    
+    
 
 @app.route('/ua')
 def ua():
