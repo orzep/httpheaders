@@ -14,7 +14,8 @@ def httpheaders():
     get_request()
     with open(HTTP_HEADERS_FILENAME, "r") as f:
         data = f.read()
-    return data
+        
+    return "[" + data[:-2] + "]"
 
 
 @app.route('/hhp')
@@ -28,10 +29,11 @@ def httpheaders_pretty():
 <meta charset="utf8">
 <title>HTTP Headers</title>
 </head> <body>
+[<BR>
 """
     for d in data:
         resp += d + "<BR>"
-    resp += "</body>\n</html>"
+    resp = resp[:-6] + resp[-5:] + "]<br></body>\n</html>"
     return resp
 
 
@@ -58,9 +60,6 @@ def get_request():
     
     return json_headers
 
-# @app.route('/')
-
-
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def index(path):
@@ -71,6 +70,7 @@ def index(path):
 def ipaddr():
     get_request()
     return request.remote_addr
+
 
 if __name__ == '__main__':
     app.run(debug=True)
